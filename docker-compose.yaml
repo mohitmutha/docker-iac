@@ -1,0 +1,51 @@
+version: '3.4'
+services:
+  hyperon:
+    #image: "patonadockerhub/hyperon:latest"
+    build: ./backend
+    #image: "hyperonio/patona:latest"
+    ports:
+      - '38080:38080'
+    env_file: .env
+  sidekiq:
+    #image: "patonadockerhub/collection_gen_api:${STAG}"
+    build: ./backend
+    env_file: .env
+    depends_on:
+      - redis
+    volumes:
+      - ".:/app"
+    environment:
+      RAILS_ENV: staging
+  
+  redis:
+    image: redis:4.0-alpine
+    volumes:
+      - "redis:/data"
+  backend:
+    #image: "patonadockerhub/collection_gen_api:${TAG}"
+    build: ./backend
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    env_file: .env
+    environment:
+      RAILS_ENV: staging
+  frontend:
+    #image: "patonadockerhub/collection_gen_app:${REACT_APP_FTAG}"
+    build: ./frontend
+    volumes:
+    - '.:/app'
+    - '/app/node_modules'
+    env_file: .env
+  reverseproxy:
+    build: ./reverseproxy/
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - backend
+      - frontend
+volumes:
+  redis:
